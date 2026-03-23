@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GATO.EXE — Design Bible</title>
+  <style>
+    :root {
+      --font-sans: system-ui, -apple-system, sans-serif;
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f5f5f3;
+      --color-background-info: #E6F1FB;
+      --color-text-primary: #1a1a18;
+      --color-text-secondary: #5f5e5a;
+      --color-text-tertiary: #888780;
+      --color-text-success: #0F6E56;
+      --color-text-info: #185FA5;
+      --color-border-tertiary: rgba(0,0,0,0.12);
+      --color-border-secondary: rgba(0,0,0,0.18);
+      --color-border-primary: rgba(0,0,0,0.3);
+      --color-border-info: #378ADD;
+      --border-radius-md: 8px;
+      --border-radius-lg: 12px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-background-primary: #1c1c1a;
+        --color-background-secondary: #242422;
+        --color-background-info: #042C53;
+        --color-text-primary: #e8e6de;
+        --color-text-secondary: #9c9a92;
+        --color-text-tertiary: #6b6a63;
+        --color-text-success: #5DCAA5;
+        --color-text-info: #85B7EB;
+        --color-border-tertiary: rgba(255,255,255,0.1);
+        --color-border-secondary: rgba(255,255,255,0.15);
+        --color-border-primary: rgba(255,255,255,0.25);
+        --color-border-info: #378ADD;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-background-primary);
+      color: var(--color-text-primary);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+    h1 {
+      font-size: 22px; font-weight: 500;
+      margin-bottom: 6px; color: var(--color-text-primary);
+    }
+    .subtitle {
+      font-size: 13px; color: var(--color-text-tertiary);
+      margin-bottom: 2rem; letter-spacing: .05em; text-transform: uppercase;
+    }
+    .root { max-width: 680px; margin: 0 auto; }
+    .tabs { display: flex; gap: 6px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .tab {
+      padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500;
+      border: 0.5px solid var(--color-border-secondary); cursor: pointer;
+      color: var(--color-text-secondary); background: transparent; transition: all .15s;
+    }
+    .tab.active {
+      background: var(--color-text-primary);
+      color: var(--color-background-primary);
+      border-color: transparent;
+    }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .card {
+      background: var(--color-background-secondary);
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 10px;
+    }
+    .card-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+    .card-sub { font-size: 12px; color: var(--color-text-secondary); line-height: 1.5; }
+    .badge {
+      display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 8px;
+      border-radius: 20px; margin-right: 6px; margin-bottom: 4px;
+    }
+    .b-purple { background: #EEEDFE; color: #3C3489; }
+    .b-teal   { background: #E1F5EE; color: #0F6E56; }
+    .b-amber  { background: #FAEEDA; color: #633806; }
+    .b-coral  { background: #FAECE7; color: #712B13; }
+    .b-blue   { background: #E6F1FB; color: #0C447C; }
+    @media (prefers-color-scheme: dark) {
+      .b-purple { background: #26215C; color: #AFA9EC; }
+      .b-teal   { background: #04342C; color: #5DCAA5; }
+      .b-amber  { background: #412402; color: #FAC775; }
+      .b-coral  { background: #4A1B0C; color: #F0997B; }
+      .b-blue   { background: #042C53; color: #85B7EB; }
+    }
+    .loop-row { display: grid; grid-template-columns: 80px 1fr; gap: 10px; align-items: start; margin-bottom: 10px; }
+    .loop-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .05em; color: var(--color-text-tertiary); padding-top: 4px; }
+    .loop-steps { display: flex; flex-wrap: wrap; gap: 6px; }
+    .step {
+      font-size: 11px; padding: 5px 10px; border-radius: var(--border-radius-md);
+      border: 0.5px solid var(--color-border-tertiary); color: var(--color-text-secondary);
+      background: var(--color-background-primary);
+    }
+    .arrow { font-size: 11px; color: var(--color-text-tertiary); padding-top: 6px; }
+    .tension-bar { margin: 1.2rem 0; }
+    .bar-track { height: 6px; background: var(--color-border-tertiary); border-radius: 3px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 3px; }
+    .moment { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+    .moment:last-child { border-bottom: none; }
+    .moment-name { font-size: 12px; font-weight: 500; color: var(--color-text-primary); }
+    .moment-why { font-size: 11px; color: var(--color-text-secondary); max-width: 260px; }
+    .moment-spike { font-size: 11px; font-weight: 500; }
+    .hook-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    @media (max-width: 480px) { .hook-grid { grid-template-columns: 1fr; } }
+    .insight-box {
+      border-left: 2px solid var(--color-border-info);
+      padding: 10px 14px; margin: 14px 0;
+      background: var(--color-background-info);
+      border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+    }
+    .insight-box p { font-size: 12px; color: var(--color-text-info); line-height: 1.5; }
+    .section-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin: 1rem 0 .5rem; }
+    .divider { height: 1px; background: var(--color-border-tertiary); margin: 8px 0 14px; }
+  </style>
+</head>
+<body>
+  <div class="root">
+    <h1>GATO.EXE — Design Bible</h1>
+    <p class="subtitle">Loops · Psicología · Hooks · Diseño del tablero</p>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('loops')">Los 3 loops</button>
+      <button class="tab" onclick="switchTab('tension')">Curva de tensión</button>
+      <button class="tab" onclick="switchTab('hooks')">Ganchos 🧠</button>
+      <button class="tab" onclick="switchTab('tablero')">Por qué el 4x4/5x5</button>
+    </div>
+
+    <!-- LOOPS -->
+    <div id="panel-loops" class="panel active">
+      <div class="insight-box">
+        <p>Todo juego que engancha tiene <strong>3 loops anidados</strong>. Si solo diseñas el de adentro, la gente se aburre. Si solo diseñas el de afuera, la gente no regresa hoy.</p>
+      </div>
+      <div class="loop-row">
+        <div class="loop-label">Micro<br/><span style="color:var(--color-text-tertiary);font-weight:400">2–3 min</span></div>
+        <div class="loop-steps">
+          <span class="step">Eliges habilidad</span>
+          <span class="arrow">→</span>
+          <span class="step">Colocas ficha</span>
+          <span class="arrow">→</span>
+          <span class="step">CPU responde</span>
+          <span class="arrow">→</span>
+          <span class="step">¿Usas power?</span>
+          <span class="arrow">→</span>
+          <span class="step">Victoria / Derrota</span>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="loop-row">
+        <div class="loop-label">Meso<br/><span style="color:var(--color-text-tertiary);font-weight:400">15–30 min</span></div>
+        <div class="loop-steps">
+          <span class="step">Elige tu Gato</span>
+          <span class="arrow">→</span>
+          <span class="step">Fase 1: 3x3</span>
+          <span class="arrow">→</span>
+          <span class="step">Gana 5 veces</span>
+          <span class="arrow">→</span>
+          <span class="step">Jefe boss 4x4</span>
+          <span class="arrow">→</span>
+          <span class="step">Upgrade abilidad</span>
+          <span class="arrow">→</span>
+          <span class="step">Fase 2: modo nuevo</span>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="loop-row">
+        <div class="loop-label">Macro<br/><span style="color:var(--color-text-tertiary);font-weight:400">días/semanas</span></div>
+        <div class="loop-steps">
+          <span class="step">Desbloquea Gatos</span>
+          <span class="arrow">→</span>
+          <span class="step">Colección de habilidades</span>
+          <span class="arrow">→</span>
+          <span class="step">Vence a CPU.EXE</span>
+          <span class="arrow">→</span>
+          <span class="step">New Game+</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TENSIÓN -->
+    <div id="panel-tension" class="panel">
+      <div class="insight-box">
+        <p>La dopamina no viene del éxito — viene de la <strong>anticipación incierta</strong>. Cada momento en la lista es un pico de activación neurológica. El diseño debe crear estos momentos deliberadamente.</p>
+      </div>
+      <div class="moment">
+        <div>
+          <div class="moment-name">Turno 1: Apertura</div>
+          <div class="moment-why">Sienten que el resultado aún es posible para ellos</div>
+        </div>
+        <div>
+          <div class="moment-spike" style="color:var(--color-text-success)">↑ Curiosidad</div>
+          <div class="bar-track" style="width:80px;margin-top:4px"><div class="bar-fill" style="width:40%;background:#1D9E75"></div></div>
+        </div>
+      </div>
+      <div class="moment">
+        <div>
+          <div class="moment-name">Activar habilidad especial</div>
+          <div class="moment-why">Decisión de alto costo → alta satisfacción si funciona</div>
+        </div>
+        <div>
+          <div class="moment-spike" style="color:#BA7517">↑↑ Agencia</div>
+          <div class="bar-track" style="width:80px;margin-top:4px"><div class="bar-fill" style="width:75%;background:#EF9F27"></div></div>
+        </div>
+      </div>
+      <div class="moment">
+        <div>
+          <div class="moment-name">CPU forma 2-en-raya</div>
+          <div class="moment-why">Amenaza visible = aversión a la pérdida activada</div>
+        </div>
+        <div>
+          <div class="moment-spike" style="color:#D85A30">↑↑↑ Tensión</div>
+          <div class="bar-track" style="width:80px;margin-top:4px"><div class="bar-fill" style="width:90%;background:#D85A30"></div></div>
+        </div>
+      </div>
+      <div class="moment">
+        <div>
+          <div class="moment-name">Bloqueas la línea</div>
+          <div class="moment-why">Alivio súbito = pico de dopamina real</div>
+        </div>
+        <div>
+          <div class="moment-spike" style="color:#1D9E75">↑↑↑↑ Alivio</div>
+          <div class="bar-track" style="width:80px;margin-top:4px"><div class="bar-fill" style="width:100%;background:#1D9E75"></div></div>
+        </div>
+      </div>
+      <div class="moment">
+        <div>
+          <div class="moment-name">Near-miss: casi ganas</div>
+          <div class="moment-why">El cerebro procesa el "casi" como victoria parcial</div>
+        </div>
+        <div>
+          <div class="moment-spike" style="color:#534AB7">↑↑ Re-engagement</div>
+          <div class="bar-track" style="width:80px;margin-top:4px"><div class="bar-fill" style="width:80%;background:#534AB7"></div></div>
+        </div>
+      </div>
+      <div class="moment">
+        <div>
+          <div class="moment-name">Victoria con racha x2</div>
+          <div class="moment-why">Recompensa variable → el multiplicador sorprende incluso esperándolo</div>
+        </div>
+        <div>
+          <div class="moment-spike" style="color:#BA7517">↑↑↑↑↑ Peak</div>
+          <div class="bar-track" style="width:80px;margin-top:4px"><div class="bar-fill" style="width:100%;background:#EF9F27"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOOKS -->
+    <div id="panel-hooks" class="panel">
+      <div class="hook-grid">
+        <div class="card">
+          <div class="badge b-purple">Variable Ratio</div>
+          <div class="card-title">Recompensa impredecible</div>
+          <div class="card-sub">No saber qué habilidades/builds tendrás es el mecanismo más adictivo conocido. Más que las recompensas fijas. (Skinner 1957, aún vigente)</div>
+        </div>
+        <div class="card">
+          <div class="badge b-coral">Loss Aversion</div>
+          <div class="card-title">El x2 que puedes perder</div>
+          <div class="card-sub">Tu racha actual vale más que una victoria futura. El jugador ya lo tiene implementado: perder la racha duele 2x más de lo que gana una racha nueva.</div>
+        </div>
+        <div class="card">
+          <div class="badge b-teal">Flow State</div>
+          <div class="card-title">Habilidad ≈ Desafío</div>
+          <div class="card-sub">El CPU que escala progresivamente con el jugador (beginner → master) mantiene la "zona de flow". Ni aburrido ni imposible = time blindness.</div>
+        </div>
+        <div class="card">
+          <div class="badge b-amber">Near Miss</div>
+          <div class="card-title">El "casi" es poderoso</div>
+          <div class="card-sub">En 4x4 con 3-en-raya hay múltiples amenazas simultáneas. El jugador casi gana por 4 caminos distintos. Eso es re-engagement automático.</div>
+        </div>
+        <div class="card">
+          <div class="badge b-blue">Agencia</div>
+          <div class="card-title">Mis decisiones importan</div>
+          <div class="card-sub">Las habilidades amplifican la sensación de control. No solo jugaste bien — usaste tu poder en el momento exacto. La narrativa del jugador sobre sí mismo.</div>
+        </div>
+        <div class="card">
+          <div class="badge b-purple">Identidad</div>
+          <div class="card-title">Mi gato, mi playstyle</div>
+          <div class="card-sub">Elegir un personaje = invertir identidad. "Soy jugador de PHANTM". La personalización genera attachment que trasciende el gameplay.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLERO -->
+    <div id="panel-tablero" class="panel">
+      <div class="insight-box">
+        <p>Tres en raya en un 3x3 es <strong>matemáticamente resuelto</strong> — con juego perfecto, siempre empate. El cerebro lo sabe. La emoción muere rápido.</p>
+      </div>
+      <p class="section-title">Por qué 4x4 y 5x5 con win en 3 es brillante</p>
+      <div class="card">
+        <div class="badge b-teal">Espacio de decisión</div>
+        <div class="card-title">De 9 a 16–25 celdas</div>
+        <div class="card-sub">Más celdas = más movimientos antes de un ganador = más tiempo para que las habilidades importen. El tablero 3x3 es demasiado corto para que un "Fantasma" cambie el resultado.</div>
+      </div>
+      <div class="card">
+        <div class="badge b-amber">Múltiples amenazas</div>
+        <div class="card-title">Líneas de ataque simultáneas</div>
+        <div class="card-sub">En 4x4 puedes tener 3 líneas de win amenazando al mismo tiempo. La CPU no puede bloquear todo. Eso es tensión genuina, no suerte.</div>
+      </div>
+      <div class="card">
+        <div class="badge b-coral">Habilidades = meaningful</div>
+        <div class="card-title">El "Ladrón" tiene dónde actuar</div>
+        <div class="card-sub">En 3x3 robar una ficha puede ser el único movimiento útil. En 4x4 es una decisión táctica real: ¿cuál ficha? ¿cuándo? La habilidad tiene peso estratégico.</div>
+      </div>
+      <div class="card">
+        <div class="badge b-purple">Tempo</div>
+        <div class="card-title">Más turnos = más ritmo</div>
+        <div class="card-sub">Los cooldowns de habilidades (si los tienes) cobran sentido con más turnos. "Tengo el Oráculo disponible en 2 turnos, aguanto." Eso es tensión de recurso.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach((t, i) => {
+        const ids = ['loops', 'tension', 'hooks', 'tablero'];
+        t.classList.toggle('active', ids[i] === name);
+      });
+      document.querySelectorAll('.panel').forEach(p => {
+        p.classList.toggle('active', p.id === 'panel-' + name);
+      });
+    }
+  </script>
+</body>
+</html>
