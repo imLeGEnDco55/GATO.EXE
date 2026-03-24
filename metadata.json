@@ -1,0 +1,5 @@
+{
+  "name": "Gato Multimodal",
+  "description": "Un juego de Gato (Tic Tac Toe) con múltiples modos: Clásico, Romano, Movimiento Libre y Terni Lapilli.",
+  "requestFramePermissions": []
+}
