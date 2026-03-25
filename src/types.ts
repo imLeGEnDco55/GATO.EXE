@@ -67,6 +67,8 @@ export interface GauntletState {
   totalWins: number;
   message: string | null;
   defeatedGatos: GatoId[];   // gatos already beaten (no repeats)
+  wallet: number;
+  winStreak: number;
 }
 
 export interface GameSettings {

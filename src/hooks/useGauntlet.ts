@@ -16,6 +16,8 @@ export function useGauntlet(
     totalWins: 0,
     message: null,
     defeatedGatos: [],
+    wallet: 0,
+    winStreak: 0,
   });
 
   const clearMessage = useCallback(() => {
@@ -71,6 +73,8 @@ export function useGauntlet(
       totalWins: 0,
       message: `CICLO 1 — ${getGato(gatos[0]).emoji} ${getGato(gatos[0]).name}`,
       defeatedGatos: [],
+      wallet: 0,
+      winStreak: 0,
     });
     applyGato(gatos[0]);
   }, [applyGato]);
@@ -93,8 +97,21 @@ export function useGauntlet(
 
       if (winner === 'X') {
         newScore.player++;
+        next.winStreak = prev.winStreak + 1;
+
+        let multiplier = 1.0;
+        if (next.winStreak >= 3) {
+          multiplier = 2.0;
+        } else if (next.winStreak >= 2) {
+          multiplier = 1.5;
+        }
+
+        next.wallet = prev.wallet + (1000 * multiplier);
       } else if (winner === 'O') {
         newScore.cpu++;
+        next.winStreak = 0;
+      } else if (winner === 'draw') {
+        next.winStreak = 0;
       }
       // Draw doesn't count — replay
 
@@ -217,5 +234,7 @@ export function useGauntlet(
     getCPUMistakeRate,
     getActiveGatoName,
     getActiveGatoDesc,
+    wallet: gauntlet.wallet,
+    winStreak: gauntlet.winStreak,
   };
 }
