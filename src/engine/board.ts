@@ -1,10 +1,16 @@
 import type { Player } from '../types';
 
+const combinationsCache: Record<number, number[][]> = {};
+
 /**
  * Returns all winning line combinations for a given grid size.
  * For grids > 3, win length stays at 3.
  */
 export const getWinningCombinations = (size: number): number[][] => {
+  if (combinationsCache[size]) {
+    return combinationsCache[size];
+  }
+
   const combos: number[][] = [];
   const winLength = size > 3 ? 3 : size;
 
@@ -44,6 +50,7 @@ export const getWinningCombinations = (size: number): number[][] => {
     }
   }
 
+  combinationsCache[size] = combos;
   return combos;
 };
 

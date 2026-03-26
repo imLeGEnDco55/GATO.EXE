@@ -52,6 +52,7 @@ export function useCPU({
     const playerPieces = pieces.filter(p => p.player === 'O');
     const isPlacementPhase = settings.mode === 'classic' ? true : playerPieces.length < size;
     const adjacentMap = getAdjacentMap(size);
+    const combinations = size > 3 ? getWinningCombinations(size) : [];
 
     const shouldMakeMistake = Math.random() < mistakeRate;
 
@@ -108,7 +109,6 @@ export function useCPU({
         }
         // 3. Strategic (4x4/5x5)
         if (size > 3) {
-          const combinations = getWinningCombinations(size);
           for (const combo of combinations) {
             const xCount = combo.filter(idx => board[idx] === 'X').length;
             const emptyCount = combo.filter(idx => board[idx] === null).length;
@@ -172,7 +172,6 @@ export function useCPU({
         }
         // 3. Strategic (4x4/5x5)
         if (size > 3) {
-          const combinations = getWinningCombinations(size);
           for (const move of possibleMoves) {
             for (const combo of combinations) {
               if (combo.includes(move.targetPos)) {
