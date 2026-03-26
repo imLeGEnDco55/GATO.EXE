@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
+    "test": "find src -name '*.test.ts' | xargs -I {} node --experimental-strip-types {}",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
