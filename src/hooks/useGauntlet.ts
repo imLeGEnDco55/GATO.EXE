@@ -24,6 +24,10 @@ function createInitialGauntlet(): GauntletState {
     totalWins: 0,
     message: null,
     defeatedGatos: [],
+    wallet: 0,
+    winStreak: 0,
+    isShopPhase: false,
+    purchasedHacks: [],
     activeBoss: null,
   };
 }
@@ -172,9 +176,22 @@ export function useGauntlet(
       const next = { ...prev };
       const newScore: MatchScore = { ...prev.matchScore };
 
-      if (winner === 'X') newScore.player++;
-      else if (winner === 'O') newScore.cpu++;
-      // Draw doesn't count
+      if (winner === 'X') {
+        newScore.player++;
+        next.winStreak = prev.winStreak + 1;
+
+        let multiplier = 1.0;
+        if (next.winStreak >= 3) multiplier = 2.0;
+        else if (next.winStreak >= 2) multiplier = 1.5;
+
+        next.wallet = prev.wallet + (1000 * multiplier);
+      } else if (winner === 'O') {
+        newScore.cpu++;
+        next.winStreak = 0;
+      } else {
+        // Draw — no score change, streak resets
+        next.winStreak = 0;
+      }
 
       next.matchScore = newScore;
 
@@ -237,34 +254,21 @@ export function useGauntlet(
       // ── Series won ──
       next.totalWins++;
 
-      // Won a procedural boss — generate next one
+      // Won a procedural boss — open shop before next boss
       if (prev.cycle > REGISTRY_CYCLES) {
-        return startProceduralCycle(next);
+        next.isShopPhase = true;
+        next.message = '⌐■-■ BLACK MARKET DESBLOQUEADO';
+        return next;
       }
 
-      // Won boss round of registry cycle — advance
+      // Won boss round of registry cycle — open shop before next cycle
       if (prev.isBossRound) {
+        next.isShopPhase = true;
         if (prev.cycle >= REGISTRY_CYCLES) {
-          // Finished all 3 registry cycles — enter infinite mode!
-          const entering = startProceduralCycle({ ...next, cycle: REGISTRY_CYCLES });
-          entering.message = `🔓 MODO SUPERVIVENCIA DESBLOQUEADO — ${entering.message}`;
-          return entering;
+          next.message = '🔓 MODO SUPERVIVENCIA — ⌐■-■ BLACK MARKET';
+        } else {
+          next.message = '⌐■-■ BLACK MARKET DESBLOQUEADO';
         }
-
-        const nextCycle = prev.cycle + 1;
-        const newGatos = pickRandomGatos(GATOS_PER_CYCLE, prev.defeatedGatos);
-        next.cycle = nextCycle;
-        next.level = nextCycle;
-        next.selectedGatos = newGatos;
-        next.currentGatoIdx = 0;
-        next.matchScore = { player: 0, cpu: 0 };
-        next.isBossRound = false;
-        next.activeBoss = null;
-        next.message = `CICLO ${nextCycle} — ${getGato(newGatos[0]).emoji} ${getGato(newGatos[0]).name}`;
-        setTimeout(() => {
-          applyGato(newGatos[0]);
-          clearMessage();
-        }, 2500);
         return next;
       }
 
@@ -321,6 +325,62 @@ export function useGauntlet(
     return getGato(gauntlet.selectedGatos[gauntlet.currentGatoIdx]).description;
   }, [gauntlet]);
 
+  // ─── Shop actions ────────────────────────────────────────────
+
+  const buyHack = useCallback((hackId: string) => {
+    setGauntlet(prev => {
+      if (prev.purchasedHacks.includes(hackId)) return prev;
+      // Price lookup — for now hardcoded, will move to registry
+      const prices: Record<string, number> = {
+        'extra-life': 2000,
+        'reveal-cpu': 3500,
+        'double-credits': 5000,
+      };
+      const price = prices[hackId] ?? 0;
+      if (prev.wallet < price) return prev;
+      return {
+        ...prev,
+        wallet: prev.wallet - price,
+        purchasedHacks: [...prev.purchasedHacks, hackId],
+      };
+    });
+  }, []);
+
+  const continueFromShop = useCallback(() => {
+    setGauntlet(prev => {
+      const next = { ...prev, isShopPhase: false };
+
+      // Procedural mode — generate next boss
+      if (prev.cycle > REGISTRY_CYCLES) {
+        return startProceduralCycle(next);
+      }
+
+      // Registry: finished all 3 cycles — enter infinite mode
+      if (prev.isBossRound && prev.cycle >= REGISTRY_CYCLES) {
+        const entering = startProceduralCycle({ ...next, cycle: REGISTRY_CYCLES });
+        entering.message = `🔓 MODO SUPERVIVENCIA DESBLOQUEADO — ${entering.message}`;
+        return entering;
+      }
+
+      // Registry: advance to next cycle
+      const nextCycle = prev.cycle + 1;
+      const newGatos = pickRandomGatos(GATOS_PER_CYCLE, prev.defeatedGatos);
+      next.cycle = nextCycle;
+      next.level = nextCycle;
+      next.selectedGatos = newGatos;
+      next.currentGatoIdx = 0;
+      next.matchScore = { player: 0, cpu: 0 };
+      next.isBossRound = false;
+      next.activeBoss = null;
+      next.message = `CICLO ${nextCycle} — ${getGato(newGatos[0]).emoji} ${getGato(newGatos[0]).name}`;
+      setTimeout(() => {
+        applyGato(newGatos[0]);
+        clearMessage();
+      }, 2500);
+      return next;
+    });
+  }, [applyGato, applyBoss, clearMessage]);
+
   return {
     gauntlet,
     startGauntlet,
@@ -328,5 +388,9 @@ export function useGauntlet(
     getCPUMistakeRate,
     getActiveGatoName,
     getActiveGatoDesc,
+    wallet: gauntlet.wallet,
+    winStreak: gauntlet.winStreak,
+    buyHack,
+    continueFromShop,
   };
 }

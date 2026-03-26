@@ -16,6 +16,17 @@ export type GatoId =
 
 export type GatoFamily = 'movimiento' | 'geometria' | 'percepcion' | 'tiempo' | 'corrupcion' | 'interaccion';
 
+export type HackRarity = 'common' | 'rare' | 'legendary';
+
+export interface Hack {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  rarity: HackRarity;
+  emoji: string;
+}
+
 export interface GatoModifiers {
   gravity: boolean;
   torus: boolean;
@@ -68,6 +79,10 @@ export interface GauntletState {
   totalWins: number;
   message: string | null;
   defeatedGatos: GatoId[];
+  wallet: number;              // currency earned from wins
+  winStreak: number;           // consecutive match wins (resets on loss/draw)
+  isShopPhase: boolean;        // true when shop should be shown between cycles
+  purchasedHacks: string[];    // hack IDs purchased this run
   activeBoss: {                // procedural boss data (null if registry gato)
     name: string;
     emoji: string;

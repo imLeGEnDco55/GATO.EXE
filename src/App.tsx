@@ -17,8 +17,9 @@ import { GameHUD } from './components/GameHUD';
 import { RulesModal } from './components/RulesModal';
 import { CardEditor } from './components/CardEditor';
 import { CardImport } from './components/CardImport';
+import { BlackMarketShop } from './components/BlackMarketShop';
 
-type AppScreen = 'menu' | 'gauntlet' | 'custom' | 'editor' | 'import';
+type AppScreen = 'menu' | 'gauntlet' | 'custom' | 'editor' | 'import' | 'shop';
 
 export default function App() {
   const [showRules, setShowRules] = useState(false);
@@ -44,6 +45,10 @@ export default function App() {
     getCPUMistakeRate,
     getActiveGatoName,
     getActiveGatoDesc,
+    wallet,
+    winStreak,
+    buyHack,
+    continueFromShop,
   } = useGauntlet(setSettings);
 
   useCPU({
@@ -72,6 +77,13 @@ export default function App() {
       handleMatchResult(engine.winner);
     }
   }, [engine.winner, handleMatchResult, screen]);
+
+  // Show shop when gauntlet enters shop phase
+  useEffect(() => {
+    if (gauntlet.isShopPhase && screen === 'gauntlet') {
+      setScreen('shop');
+    }
+  }, [gauntlet.isShopPhase, screen]);
 
   const startGauntletMode = () => {
     setScreen('gauntlet');
@@ -111,6 +123,7 @@ export default function App() {
   // Determine what to render
   const isPlaying = screen === 'gauntlet' || screen === 'custom';
   const showGame = isPlaying && engine.gameState !== 'menu';
+  const showShop = screen === 'shop';
 
   return (
     <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center px-6 py-10 select-none font-['Inter',system-ui,sans-serif]">
@@ -163,6 +176,19 @@ export default function App() {
                 onGoToMenu={goToMenu}
               />
             </div>
+          )}
+
+          {showShop && (
+            <BlackMarketShop
+              wallet={wallet}
+              purchasedHacks={gauntlet.purchasedHacks}
+              onBuyHack={buyHack}
+              onContinue={() => {
+                continueFromShop();
+                setScreen('gauntlet');
+                setTimeout(() => engine.resetGame(), 100);
+              }}
+            />
           )}
         </AnimatePresence>
 
