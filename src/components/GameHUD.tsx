@@ -7,9 +7,10 @@ interface GameHUDProps {
   gatoName: string;
   gatoDesc: string;
   lagMessage: string | null;
+  onExit: () => void;
 }
 
-export function GameHUD({ currentPlayer, gauntlet, gatoName, gatoDesc, lagMessage }: GameHUDProps) {
+export function GameHUD({ currentPlayer, gauntlet, gatoName, gatoDesc, lagMessage, onExit }: GameHUDProps) {
   const { matchScore, matchesNeeded, cycle, message, isBossRound } = gauntlet;
   const totalMatches = matchScore.player + matchScore.cpu;
 
@@ -17,8 +18,15 @@ export function GameHUD({ currentPlayer, gauntlet, gatoName, gatoDesc, lagMessag
     <div className="space-y-4">
       {/* Cycle + Gato Header */}
       <div className="space-y-2">
-        <div className="flex justify-between text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+        <div className="flex justify-between items-center text-[10px] font-mono text-slate-500 uppercase tracking-widest">
           <span>{cycle > 3 ? `Lv.${gauntlet.level}` : `Ciclo ${cycle}/3`}</span>
+          <button
+            onClick={onExit}
+            className="text-slate-700 hover:text-rose-400 transition-colors font-mono text-[10px] px-1.5 py-0.5 rounded hover:bg-rose-950/30"
+            title="Salir al menú"
+          >
+            ✕ SALIR
+          </button>
           <span>
             {gauntlet.activeBoss && cycle > 3
               ? 'SUPERVIVENCIA'

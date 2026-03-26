@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence } from 'motion/react';
 import type { GameSettings } from './types';
 import type { GatoCard } from './sdk/gatoCard';
+import type { CustomHackData } from './lib/hackCard';
 import { DEFAULT_MODIFIERS } from './engine/gatoRegistry';
 import { generateBlockedCells, generateMineIndex, generateNumericValues } from './engine/gatoModifiers';
 
@@ -18,12 +19,15 @@ import { RulesModal } from './components/RulesModal';
 import { CardEditor } from './components/CardEditor';
 import { CardImport } from './components/CardImport';
 import { BlackMarketShop } from './components/BlackMarketShop';
+import { SDKat } from './components/SDKat';
+import { HackCardEditor } from './components/HackCardEditor';
 
-type AppScreen = 'menu' | 'gauntlet' | 'custom' | 'editor' | 'import' | 'shop';
+type AppScreen = 'menu' | 'gauntlet' | 'custom' | 'editor' | 'import' | 'shop' | 'sdkat' | 'hack-editor';
 
 export default function App() {
   const [showRules, setShowRules] = useState(false);
   const [screen, setScreen] = useState<AppScreen>('menu');
+  const [customHacks, setCustomHacks] = useState<CustomHackData[]>([]);
   const [settings, setSettings] = useState<GameSettings>({
     mode: 'classic',
     opponent: 'cpu',
@@ -137,6 +141,8 @@ export default function App() {
               onStartMainMode={startGauntletMode}
               onOpenEditor={() => setScreen('editor')}
               onOpenImport={() => setScreen('import')}
+              onOpenSDKat={() => setScreen('sdkat')}
+              onOpenHackEditor={() => setScreen('hack-editor')}
             />
           )}
 
@@ -162,6 +168,7 @@ export default function App() {
                 gatoName={screen === 'custom' ? '🐱 CUSTOM GATO' : getActiveGatoName()}
                 gatoDesc={screen === 'custom' ? 'Gato personalizado' : getActiveGatoDesc()}
                 lagMessage={engine.lagMessage}
+                onExit={goToMenu}
               />
               <Board
                 board={engine.board}
@@ -189,6 +196,23 @@ export default function App() {
                 setScreen('gauntlet');
                 setTimeout(() => engine.resetGame(), 100);
               }}
+            />
+          )}
+
+          {screen === 'sdkat' && (
+            <SDKat
+              onBack={() => setScreen('menu')}
+              onImport={(hack) => {
+                setCustomHacks(prev => [...prev, hack]);
+                setScreen('menu');
+              }}
+            />
+          )}
+
+          {screen === 'hack-editor' && (
+            <HackCardEditor
+              onBack={() => setScreen('menu')}
+              onPlayCard={playCustomCard}
             />
           )}
         </AnimatePresence>

@@ -1,13 +1,15 @@
 import { motion } from 'motion/react';
-import { Trophy, ChevronRight, Package, Download } from 'lucide-react';
+import { Trophy, ChevronRight, Package, Download, Terminal, Cpu } from 'lucide-react';
 
 interface MainMenuProps {
   onStartMainMode: () => void;
   onOpenEditor: () => void;
   onOpenImport: () => void;
+  onOpenSDKat: () => void;
+  onOpenHackEditor: () => void;
 }
 
-export function MainMenu({ onStartMainMode, onOpenEditor, onOpenImport }: MainMenuProps) {
+export function MainMenu({ onStartMainMode, onOpenEditor, onOpenImport, onOpenSDKat, onOpenHackEditor }: MainMenuProps) {
   return (
     <motion.div
       key="menu"
@@ -58,6 +60,29 @@ export function MainMenu({ onStartMainMode, onOpenEditor, onOpenImport }: MainMe
           >
             <Download className="w-6 h-6 text-slate-600 group-hover:text-indigo-400 transition-colors" />
             <span className="text-xs font-black tracking-wider text-slate-500 group-hover:text-white transition-colors">IMPORTAR</span>
+          </motion.button>
+        </div>
+
+        {/* Hack Cards Section */}
+        <div className="grid grid-cols-2 gap-3 mt-3">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onOpenHackEditor}
+            className="p-5 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col items-center gap-2 hover:border-emerald-500/50 transition-all group"
+          >
+            <Cpu className="w-6 h-6 text-slate-600 group-hover:text-emerald-400 transition-colors" />
+            <span className="text-xs font-black tracking-wider text-slate-500 group-hover:text-white transition-colors">HACK EDITOR</span>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onOpenSDKat}
+            className="p-5 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col items-center gap-2 hover:border-green-500/50 transition-all group"
+          >
+            <Terminal className="w-6 h-6 text-slate-600 group-hover:text-green-400 transition-colors" />
+            <span className="text-xs font-black tracking-wider text-slate-500 group-hover:text-white transition-colors">SDKat</span>
           </motion.button>
         </div>
       </div>
