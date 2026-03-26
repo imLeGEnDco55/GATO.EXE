@@ -160,9 +160,9 @@ export function processTurn(
   if (isPlacementPhase) {
     let finalIndex = intent.targetIndex;
 
-    // ── LAYER 1: CHAOS — Lag drift ──
+    // ── LAYER 1: CHAOS — Lag drift (blocked by FIREWALL hack) ──
     let lagDrifted = false;
-    if (mods.lag && currentPlayer === 'X') {
+    if (mods.lag && currentPlayer === 'X' && !settings.playerHacks.includes('FIREWALL')) {
       const original = finalIndex;
       finalIndex = applyLag(finalIndex, board, size);
       lagDrifted = finalIndex !== original;

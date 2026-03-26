@@ -35,6 +35,7 @@ export default function App() {
     blockedIndices: [],
     mineIndex: -1,
     numericValues: [],
+    playerHacks: [],
   });
 
   const engine = useGameEngine(settings);

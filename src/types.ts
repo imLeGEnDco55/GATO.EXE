@@ -102,6 +102,7 @@ export interface GameSettings {
   blockedIndices: number[];   // pre-computed blocked cells
   mineIndex: number;          // -1 if no mine
   numericValues: number[];    // cell values for CROM mode
+  playerHacks: string[];      // active hack IDs for this match
 }
 
 export interface GameProgress {
