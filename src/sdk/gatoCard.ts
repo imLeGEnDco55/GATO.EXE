@@ -30,9 +30,7 @@ export const CARD_CHUNK_KEY = 'GatoCard';
 
 /** Generate a UUID v4 */
 export function generateCardId(): string {
-  return 'xxxx-xxxx-xxxx'.replace(/x/g, () =>
-    Math.floor(Math.random() * 16).toString(16)
-  );
+  return crypto.randomUUID();
 }
 
 /** Create a blank card with defaults */
