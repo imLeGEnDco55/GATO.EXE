@@ -57,6 +57,14 @@ export interface MatchScore {
   cpu: number;
 }
 
+export interface Hack {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  rarity: 'common' | 'rare' | 'legendary';
+}
+
 export interface GauntletState {
   cycle: 1 | 2 | 3;
   selectedGatos: GatoId[];   // 2 per cycle (+ boss for cycle 3)
@@ -64,6 +72,8 @@ export interface GauntletState {
   matchScore: MatchScore;
   matchesNeeded: number;     // 2 (best of 3)
   isBossRound: boolean;      // 4x4 or 5x5 classic round
+  isShopPhase: boolean;
+  wallet: number;
   totalWins: number;
   message: string | null;
   defeatedGatos: GatoId[];   // gatos already beaten (no repeats)

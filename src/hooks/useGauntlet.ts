@@ -13,6 +13,8 @@ export function useGauntlet(
     matchScore: { player: 0, cpu: 0 },
     matchesNeeded: 2,
     isBossRound: false,
+    isShopPhase: false,
+    wallet: 0,
     totalWins: 0,
     message: null,
     defeatedGatos: [],
@@ -68,6 +70,8 @@ export function useGauntlet(
       matchScore: { player: 0, cpu: 0 },
       matchesNeeded: 2,
       isBossRound: false,
+      isShopPhase: false,
+      wallet: 0,
       totalWins: 0,
       message: `CICLO 1 — ${getGato(gatos[0]).emoji} ${getGato(gatos[0]).name}`,
       defeatedGatos: [],
@@ -93,6 +97,7 @@ export function useGauntlet(
 
       if (winner === 'X') {
         newScore.player++;
+        next.wallet += 100; // Reward for winning a match
       } else if (winner === 'O') {
         newScore.cpu++;
       }
@@ -135,8 +140,9 @@ export function useGauntlet(
 
       // Series won
       if (prev.isBossRound) {
-        // Won the boss round — advance to next cycle
+        // Won the boss round
         next.totalWins++;
+        next.wallet += 500; // Reward for beating the boss
 
         if (prev.cycle === 3) {
           // Beat everything!
@@ -144,20 +150,9 @@ export function useGauntlet(
           return next;
         }
 
-        const nextCycle = (prev.cycle + 1) as 1 | 2 | 3;
-        const count = nextCycle === 3 ? 2 : 2;
-        const newGatos = pickRandomGatos(count, prev.defeatedGatos);
-        next.cycle = nextCycle;
-        next.selectedGatos = newGatos;
-        next.currentGatoIdx = 0;
-        next.matchScore = { player: 0, cpu: 0 };
-        next.isBossRound = false;
-        next.message = `CICLO ${nextCycle} — ${getGato(newGatos[0]).emoji} ${getGato(newGatos[0]).name}`;
-
-        setTimeout(() => {
-          applyGato(newGatos[0]);
-          clearMessage();
-        }, 2500);
+        // Instead of directly starting next cycle, go to Shop
+        next.isShopPhase = true;
+        next.message = 'ACCESO CONCEDIDO: BLACK MARKET SHOP';
         return next;
       }
 
@@ -210,6 +205,39 @@ export function useGauntlet(
     return getGato(gauntlet.selectedGatos[gauntlet.currentGatoIdx]).description;
   }, [gauntlet]);
 
+  const continueFromShop = useCallback(() => {
+    setGauntlet(prev => {
+      const nextCycle = (prev.cycle + 1) as 1 | 2 | 3;
+      const count = nextCycle === 3 ? 2 : 2;
+      const newGatos = pickRandomGatos(count, prev.defeatedGatos);
+
+      const next = { ...prev };
+      next.cycle = nextCycle;
+      next.selectedGatos = newGatos;
+      next.currentGatoIdx = 0;
+      next.matchScore = { player: 0, cpu: 0 };
+      next.isBossRound = false;
+      next.isShopPhase = false;
+      next.message = `CICLO ${nextCycle} — ${getGato(newGatos[0]).emoji} ${getGato(newGatos[0]).name}`;
+
+      setTimeout(() => {
+        applyGato(newGatos[0]);
+        clearMessage();
+      }, 2500);
+
+      return next;
+    });
+  }, [applyGato, clearMessage]);
+
+  const buyHack = useCallback((hackId: string, price: number) => {
+    setGauntlet(prev => {
+      if (prev.wallet >= price) {
+        return { ...prev, wallet: prev.wallet - price };
+      }
+      return prev;
+    });
+  }, []);
+
   return {
     gauntlet,
     startGauntlet,
@@ -217,5 +245,7 @@ export function useGauntlet(
     getCPUMistakeRate,
     getActiveGatoName,
     getActiveGatoDesc,
+    continueFromShop,
+    buyHack,
   };
 }

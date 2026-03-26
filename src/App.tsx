@@ -16,8 +16,9 @@ import { GameHUD } from './components/GameHUD';
 import { RulesModal } from './components/RulesModal';
 import { CardEditor } from './components/CardEditor';
 import { CardImport } from './components/CardImport';
+import { BlackMarketShop } from './components/BlackMarketShop';
 
-type AppScreen = 'menu' | 'gauntlet' | 'custom' | 'editor' | 'import';
+type AppScreen = 'menu' | 'gauntlet' | 'custom' | 'editor' | 'import' | 'shop';
 
 export default function App() {
   const [showRules, setShowRules] = useState(false);
@@ -43,6 +44,8 @@ export default function App() {
     getCPUMistakeRate,
     getActiveGatoName,
     getActiveGatoDesc,
+    continueFromShop,
+    buyHack,
   } = useGauntlet(setSettings);
 
   useCPU({
@@ -62,6 +65,13 @@ export default function App() {
       handleMatchResult(engine.winner);
     }
   }, [engine.winner, handleMatchResult, screen]);
+
+  // Handle transition to Black Market Shop
+  useEffect(() => {
+    if (screen === 'gauntlet' && gauntlet.isShopPhase) {
+      setTimeout(() => setScreen('shop'), 2500); // Wait for boss win message to clear
+    }
+  }, [screen, gauntlet.isShopPhase]);
 
   const startGauntletMode = () => {
     setScreen('gauntlet');
@@ -127,6 +137,17 @@ export default function App() {
             <CardImport
               onBack={() => setScreen('menu')}
               onPlayCard={playCustomCard}
+            />
+          )}
+
+          {screen === 'shop' && (
+            <BlackMarketShop
+              wallet={gauntlet.wallet}
+              onBuyHack={buyHack}
+              onContinue={() => {
+                setScreen('gauntlet');
+                continueFromShop();
+              }}
             />
           )}
 
