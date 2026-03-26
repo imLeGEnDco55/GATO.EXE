@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, type DragEvent, type ChangeEvent } from 'react';
+import { useState, useCallback, useRef, type DragEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { GatoCard } from '../sdk/gatoCard';
 import { MODIFIER_LABELS } from '../sdk/gatoCard';
@@ -48,11 +48,6 @@ export function CardImport({ onBack, onPlayCard }: CardImportProps) {
   const handleDragLeave = useCallback(() => {
     setIsDragging(false);
   }, []);
-
-  const handleFileSelect = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) processFile(file);
-  }, [processFile]);
 
   const activeModifiers = card
     ? Object.entries(card.modifiers)
@@ -134,7 +129,10 @@ export function CardImport({ onBack, onPlayCard }: CardImportProps) {
           ref={fileRef}
           type="file"
           accept=".png,image/png"
-          onChange={handleFileSelect}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) processFile(file);
+          }}
           className="hidden"
         />
       </div>
