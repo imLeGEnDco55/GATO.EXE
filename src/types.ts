@@ -58,15 +58,22 @@ export interface MatchScore {
 }
 
 export interface GauntletState {
-  cycle: 1 | 2 | 3;
-  selectedGatos: GatoId[];   // 2 per cycle (+ boss for cycle 3)
-  currentGatoIdx: number;    // index into selectedGatos, or -1 for grid boss
+  cycle: number;
+  level: number;               // overall level (1, 2, 3... ∞)
+  selectedGatos: GatoId[];     // registry gatos for this cycle
+  currentGatoIdx: number;
   matchScore: MatchScore;
-  matchesNeeded: number;     // 2 (best of 3)
-  isBossRound: boolean;      // 4x4 or 5x5 classic round
+  matchesNeeded: number;       // 2 (Bo3) or 3 (Bo5)
+  isBossRound: boolean;
   totalWins: number;
   message: string | null;
-  defeatedGatos: GatoId[];   // gatos already beaten (no repeats)
+  defeatedGatos: GatoId[];
+  activeBoss: {                // procedural boss data (null if registry gato)
+    name: string;
+    emoji: string;
+    description: string;
+    gridSize: number;
+  } | null;
 }
 
 export interface GameSettings {

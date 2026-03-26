@@ -68,6 +68,7 @@ export function useGameEngine(settings: GameSettings) {
     selectedPieceIndex: engineState.selectedPieceIndex,
     moveCount: engineState.moveCount,
     mineTriggered: engineState.mineTriggered,
+    lagDrifted: engineState.lagDrifted,
     lagMessage,
     handleCellClick,
     processMove,

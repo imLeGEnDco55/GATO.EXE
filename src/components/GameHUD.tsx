@@ -18,9 +18,11 @@ export function GameHUD({ currentPlayer, gauntlet, gatoName, gatoDesc, lagMessag
       {/* Cycle + Gato Header */}
       <div className="space-y-2">
         <div className="flex justify-between text-[10px] font-mono text-slate-500 uppercase tracking-widest">
-          <span>Ciclo {cycle}/3</span>
+          <span>{cycle > 3 ? `Lv.${gauntlet.level}` : `Ciclo ${cycle}/3`}</span>
           <span>
-            {isBossRound
+            {gauntlet.activeBoss && cycle > 3
+              ? 'SUPERVIVENCIA'
+              : isBossRound
               ? `BOSS ROUND`
               : `GATO ${gauntlet.currentGatoIdx + 1}/${gauntlet.selectedGatos.length}`
             }

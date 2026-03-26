@@ -8,6 +8,7 @@ import { generateBlockedCells, generateMineIndex, generateNumericValues } from '
 import { useGameEngine } from './hooks/useGameEngine';
 import { useGauntlet } from './hooks/useGauntlet';
 import { useCPU } from './hooks/useCPU';
+import { useGameJuice } from './hooks/useGameJuice';
 
 import { Header } from './components/Header';
 import { MainMenu } from './components/MainMenu';
@@ -54,6 +55,15 @@ export default function App() {
     settings,
     mistakeRate: screen === 'custom' ? 0.4 : getCPUMistakeRate(),
     processMove: engine.processMove,
+  });
+
+  const juice = useGameJuice({
+    moveCount: engine.moveCount,
+    winner: engine.winner,
+    mineTriggered: engine.mineTriggered,
+    lagDrifted: engine.lagDrifted,
+    pieces: engine.pieces,
+    modifiers: settings.modifiers,
   });
 
   // Track wins for Gauntlet
@@ -147,6 +157,7 @@ export default function App() {
                 selectedPieceIndex={engine.selectedPieceIndex}
                 winner={engine.winner}
                 mineTriggered={engine.mineTriggered}
+                juice={juice}
                 onCellClick={engine.handleCellClick}
                 onResetGame={engine.resetGame}
                 onGoToMenu={goToMenu}

@@ -1,13 +1,21 @@
 import { useState, useCallback, type Dispatch, type SetStateAction } from 'react';
 import type { GatoId, GauntletState, MatchScore, Player, GameSettings } from '../types';
-import { pickRandomGatos, getGato, DEFAULT_MODIFIERS } from '../engine/gatoRegistry';
+import { pickRandomGatos, getGato, DEFAULT_MODIFIERS, GATO_REGISTRY } from '../engine/gatoRegistry';
 import { generateBlockedCells, generateMineIndex, generateNumericValues } from '../engine/gatoModifiers';
+import { generateProceduralBoss, getDifficultyLabel } from '../engine/compatibility';
+import type { ProceduralBoss } from '../engine/compatibility';
 
-export function useGauntlet(
-  setSettings: Dispatch<SetStateAction<GameSettings>>
-) {
-  const [gauntlet, setGauntlet] = useState<GauntletState>({
+// ─── Constants ────────────────────────────────────────────────────
+
+const REGISTRY_CYCLES = 3;       // First 3 cycles use the 19 primigenios
+const GATOS_PER_CYCLE = 2;       // 2 gatos per cycle
+
+// ─── Initial State ────────────────────────────────────────────────
+
+function createInitialGauntlet(): GauntletState {
+  return {
     cycle: 1,
+    level: 1,
     selectedGatos: [],
     currentGatoIdx: 0,
     matchScore: { player: 0, cpu: 0 },
@@ -16,13 +24,22 @@ export function useGauntlet(
     totalWins: 0,
     message: null,
     defeatedGatos: [],
-  });
+    activeBoss: null,
+  };
+}
+
+// ─── Hook ─────────────────────────────────────────────────────────
+
+export function useGauntlet(
+  setSettings: Dispatch<SetStateAction<GameSettings>>
+) {
+  const [gauntlet, setGauntlet] = useState<GauntletState>(createInitialGauntlet);
 
   const clearMessage = useCallback(() => {
     setGauntlet(prev => ({ ...prev, message: null }));
   }, []);
 
-  // Apply a gato's settings (mode + modifiers)
+  // Apply a registry gato's settings
   const applyGato = useCallback((gatoId: GatoId, gridSize: number = 3) => {
     const gato = getGato(gatoId);
     const mods = gato.modifiers;
@@ -44,7 +61,27 @@ export function useGauntlet(
     }));
   }, [setSettings]);
 
-  // Apply boss round (4x4 or 5x5 classic, no modifiers)
+  // Apply a procedural boss's settings
+  const applyBoss = useCallback((boss: ProceduralBoss) => {
+    const mods = boss.definition.modifiers;
+    const cells = boss.gridSize * boss.gridSize;
+    const blocked = mods.blockedCells > 0 ? generateBlockedCells(mods.blockedCells, cells) : [];
+    const mine = mods.mine ? generateMineIndex(cells) : -1;
+    const numeric = mods.numeric ? generateNumericValues() : [];
+
+    setSettings(prev => ({
+      ...prev,
+      mode: boss.definition.mode,
+      gridSize: boss.gridSize,
+      activeGato: null,
+      modifiers: mods,
+      blockedIndices: blocked,
+      mineIndex: mine,
+      numericValues: numeric,
+    }));
+  }, [setSettings]);
+
+  // Apply classic boss grid (cycles 1-3 end-of-cycle boss)
   const applyBossGrid = useCallback((gridSize: number) => {
     setSettings(prev => ({
       ...prev,
@@ -60,71 +97,135 @@ export function useGauntlet(
 
   // Start a new gauntlet run
   const startGauntlet = useCallback(() => {
-    const gatos = pickRandomGatos(2);
+    const gatos = pickRandomGatos(GATOS_PER_CYCLE);
     setGauntlet({
-      cycle: 1,
+      ...createInitialGauntlet(),
       selectedGatos: gatos,
-      currentGatoIdx: 0,
-      matchScore: { player: 0, cpu: 0 },
-      matchesNeeded: 2,
-      isBossRound: false,
-      totalWins: 0,
       message: `CICLO 1 — ${getGato(gatos[0]).emoji} ${getGato(gatos[0]).name}`,
-      defeatedGatos: [],
     });
     applyGato(gatos[0]);
   }, [applyGato]);
 
-  // Get CPU difficulty based on cycle
+  // CPU difficulty — scales with level
   const getCPUMistakeRate = useCallback((): number => {
-    switch (gauntlet.cycle) {
-      case 1: return 0.7;  // 70% mistakes
-      case 2: return 0.4;  // 40% mistakes  
-      case 3: return 0.1;  // 10% mistakes
+    const { cycle, level, isBossRound, activeBoss } = gauntlet;
+
+    // Procedural boss has its own rate
+    if (activeBoss && cycle > REGISTRY_CYCLES) {
+      return Math.max(0, 0.65 - level * 0.012);
+    }
+
+    // Registry cycles (1-3)
+    if (isBossRound) {
+      switch (cycle) {
+        case 1: return 0.5;
+        case 2: return 0.25;
+        case 3: return 0.05;
+        default: return 0.3;
+      }
+    }
+
+    switch (cycle) {
+      case 1: return 0.7;
+      case 2: return 0.4;
+      case 3: return 0.1;
       default: return 0.5;
     }
-  }, [gauntlet.cycle]);
+  }, [gauntlet]);
 
-  // Handle match result
+  // ─── Start a new procedural cycle (cycle 4+) ──────────────────
+
+  function startProceduralCycle(prevState: GauntletState): GauntletState {
+    const nextLevel = prevState.level + 1;
+    const nextCycle = prevState.cycle + 1;
+    const boss = generateProceduralBoss(nextLevel);
+
+    // Schedule settings application
+    setTimeout(() => {
+      applyBoss(boss);
+      clearMessage();
+    }, 2500);
+
+    return {
+      ...prevState,
+      cycle: nextCycle,
+      level: nextLevel,
+      selectedGatos: [],
+      currentGatoIdx: 0,
+      matchScore: { player: 0, cpu: 0 },
+      matchesNeeded: boss.matchesNeeded,
+      isBossRound: true,
+      activeBoss: {
+        name: boss.definition.name,
+        emoji: boss.definition.emoji,
+        description: boss.definition.description,
+        gridSize: boss.gridSize,
+      },
+      message: `${boss.definition.emoji} LV.${nextLevel} ${boss.definition.name} — ${getDifficultyLabel(nextLevel)}`,
+    };
+  }
+
+  // ─── Handle match result ──────────────────────────────────────
+
   const handleMatchResult = useCallback((winner: Player | 'draw') => {
     setGauntlet(prev => {
       const next = { ...prev };
       const newScore: MatchScore = { ...prev.matchScore };
 
-      if (winner === 'X') {
-        newScore.player++;
-      } else if (winner === 'O') {
-        newScore.cpu++;
-      }
-      // Draw doesn't count — replay
+      if (winner === 'X') newScore.player++;
+      else if (winner === 'O') newScore.cpu++;
+      // Draw doesn't count
 
       next.matchScore = newScore;
 
-      // Check if series is decided
       const seriesWon = newScore.player >= prev.matchesNeeded;
       const seriesLost = newScore.cpu >= prev.matchesNeeded;
 
+      // ── Series continues ──
       if (!seriesWon && !seriesLost) {
-        // Series continues
-        const total = newScore.player + newScore.cpu;
         if (winner === 'draw') {
           next.message = 'EMPATE — NO CUENTA. REPITE.';
+        } else if (prev.activeBoss) {
+          next.message = `${prev.activeBoss.name} — ${newScore.player}:${newScore.cpu}`;
+        } else if (prev.isBossRound) {
+          const size = prev.cycle <= 2 ? 4 : 5;
+          next.message = `GRID ${size}×${size} — ${newScore.player}:${newScore.cpu}`;
         } else {
-          const currentGato = prev.isBossRound ? null : getGato(prev.selectedGatos[prev.currentGatoIdx]);
-          const name = currentGato ? currentGato.name : `${prev.cycle === 3 ? '5x5' : '4x4'}`;
-          next.message = `${name} — ${newScore.player}:${newScore.cpu}`;
+          const gato = getGato(prev.selectedGatos[prev.currentGatoIdx]);
+          next.message = `${gato.name} — ${newScore.player}:${newScore.cpu}`;
         }
         setTimeout(clearMessage, 2000);
         return next;
       }
 
+      // ── Series lost ──
       if (seriesLost) {
-        // Lost series — restart current cycle with new gatos
-        const newGatos = pickRandomGatos(2, prev.defeatedGatos);
+        // In procedural mode (cycle 4+): restart same level with new boss
+        if (prev.cycle > REGISTRY_CYCLES) {
+          const boss = generateProceduralBoss(prev.level);
+          next.matchScore = { player: 0, cpu: 0 };
+          next.matchesNeeded = boss.matchesNeeded;
+          next.activeBoss = {
+            name: boss.definition.name,
+            emoji: boss.definition.emoji,
+            description: boss.definition.description,
+            gridSize: boss.gridSize,
+          };
+          next.message = `DERROTA. NUEVO BOSS LV.${prev.level} — ${boss.definition.emoji} ${boss.definition.name}`;
+          setTimeout(() => {
+            applyBoss(boss);
+            clearMessage();
+          }, 2000);
+          return next;
+        }
+
+        // Registry cycles: restart cycle with new gatos
+        const newGatos = pickRandomGatos(GATOS_PER_CYCLE, prev.defeatedGatos);
         next.selectedGatos = newGatos;
         next.currentGatoIdx = 0;
         next.matchScore = { player: 0, cpu: 0 };
         next.isBossRound = false;
+        next.activeBoss = null;
         next.message = `DERROTA. REINICIO CICLO ${prev.cycle} — ${getGato(newGatos[0]).emoji} ${getGato(newGatos[0]).name}`;
         setTimeout(() => {
           applyGato(newGatos[0]);
@@ -133,27 +234,33 @@ export function useGauntlet(
         return next;
       }
 
-      // Series won
-      if (prev.isBossRound) {
-        // Won the boss round — advance to next cycle
-        next.totalWins++;
+      // ── Series won ──
+      next.totalWins++;
 
-        if (prev.cycle === 3) {
-          // Beat everything!
-          next.message = '🏆 GAUNTLET COMPLETADO. SISTEMA DOMINADO.';
-          return next;
+      // Won a procedural boss — generate next one
+      if (prev.cycle > REGISTRY_CYCLES) {
+        return startProceduralCycle(next);
+      }
+
+      // Won boss round of registry cycle — advance
+      if (prev.isBossRound) {
+        if (prev.cycle >= REGISTRY_CYCLES) {
+          // Finished all 3 registry cycles — enter infinite mode!
+          const entering = startProceduralCycle({ ...next, cycle: REGISTRY_CYCLES });
+          entering.message = `🔓 MODO SUPERVIVENCIA DESBLOQUEADO — ${entering.message}`;
+          return entering;
         }
 
-        const nextCycle = (prev.cycle + 1) as 1 | 2 | 3;
-        const count = nextCycle === 3 ? 2 : 2;
-        const newGatos = pickRandomGatos(count, prev.defeatedGatos);
+        const nextCycle = prev.cycle + 1;
+        const newGatos = pickRandomGatos(GATOS_PER_CYCLE, prev.defeatedGatos);
         next.cycle = nextCycle;
+        next.level = nextCycle;
         next.selectedGatos = newGatos;
         next.currentGatoIdx = 0;
         next.matchScore = { player: 0, cpu: 0 };
         next.isBossRound = false;
+        next.activeBoss = null;
         next.message = `CICLO ${nextCycle} — ${getGato(newGatos[0]).emoji} ${getGato(newGatos[0]).name}`;
-
         setTimeout(() => {
           applyGato(newGatos[0]);
           clearMessage();
@@ -165,25 +272,23 @@ export function useGauntlet(
       const defeated = [...prev.defeatedGatos, prev.selectedGatos[prev.currentGatoIdx]];
       next.defeatedGatos = defeated;
       next.matchScore = { player: 0, cpu: 0 };
+      next.activeBoss = null;
 
       const nextGatoIdx = prev.currentGatoIdx + 1;
 
       if (nextGatoIdx < prev.selectedGatos.length) {
-        // Next gato in this cycle
         next.currentGatoIdx = nextGatoIdx;
         const nextGato = getGato(prev.selectedGatos[nextGatoIdx]);
         next.message = `VICTORIA. SIGUIENTE: ${nextGato.emoji} ${nextGato.name}`;
-
         setTimeout(() => {
           applyGato(prev.selectedGatos[nextGatoIdx]);
           clearMessage();
         }, 2500);
       } else {
-        // All gatos defeated — boss round
+        // Boss round (registry cycles)
         next.isBossRound = true;
-        const bossSize = prev.cycle === 3 ? 5 : 4;
-        next.message = `TODOS DERROTADOS. BOSS: TABLERO ${bossSize}x${bossSize}`;
-
+        const bossSize = prev.cycle >= 3 ? 5 : 4;
+        next.message = `TODOS DERROTADOS. BOSS: TABLERO ${bossSize}×${bossSize}`;
         setTimeout(() => {
           applyBossGrid(bossSize);
           clearMessage();
@@ -192,11 +297,16 @@ export function useGauntlet(
 
       return next;
     });
-  }, [applyGato, applyBossGrid, clearMessage]);
+  }, [applyGato, applyBoss, applyBossGrid, clearMessage]);
+
+  // ─── Display helpers ──────────────────────────────────────────
 
   const getActiveGatoName = useCallback((): string => {
+    if (gauntlet.activeBoss) {
+      return `${gauntlet.activeBoss.emoji} ${gauntlet.activeBoss.name}`;
+    }
     if (gauntlet.isBossRound) {
-      const size = gauntlet.cycle === 3 ? 5 : 4;
+      const size = gauntlet.cycle >= 3 ? 5 : 4;
       return `GRID ${size}×${size}`;
     }
     if (gauntlet.selectedGatos.length === 0) return 'GATO.EXE';
@@ -205,6 +315,7 @@ export function useGauntlet(
   }, [gauntlet]);
 
   const getActiveGatoDesc = useCallback((): string => {
+    if (gauntlet.activeBoss) return gauntlet.activeBoss.description;
     if (gauntlet.isBossRound) return 'Clásico sin reglas especiales.';
     if (gauntlet.selectedGatos.length === 0) return '';
     return getGato(gauntlet.selectedGatos[gauntlet.currentGatoIdx]).description;
