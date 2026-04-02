@@ -5,8 +5,14 @@ export type Opponent = 'human' | 'cpu';
 // Original 4 movement modes
 export type GameMode = 'classic' | 'romano' | 'free' | 'terni';
 
-// Custom GATOS use arbitrary string IDs (no hardcoded registry)
-export type GatoId = string;
+// All 19 GATOS.EXE
+export type GatoId =
+  | 'LEGACY' | 'CRAWLER' | 'PROXY' | 'BUFFER'
+  | 'GRAVIT' | 'TORUS' | 'VORTEX'
+  | 'MISERE' | 'CROM' | 'STEALTH'
+  | 'OVERCLOCK' | 'DECAY'
+  | 'MALWARE' | 'TROJAN' | 'QUANTUM'
+  | 'CRYPTO' | 'MIRROR' | 'PUSH' | 'LAG';
 
 export type GatoFamily = 'movimiento' | 'geometria' | 'percepcion' | 'tiempo' | 'corrupcion' | 'interaccion';
 
@@ -65,7 +71,6 @@ export interface MatchScore {
 export interface GauntletState {
   cycle: number;
   level: number;               // overall level (1, 2, 3... ∞)
-  encounterInCycle: number;    // 0-5 position: [3,3,4, 3,3,5] pattern
   selectedGatos: GatoId[];     // registry gatos for this cycle
   currentGatoIdx: number;
   matchScore: MatchScore;

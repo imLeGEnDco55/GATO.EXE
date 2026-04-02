@@ -295,6 +295,21 @@ export function generateProceduralGato(): GatoDefinition {
   return boss.definition;
 }
 
+// ─── Grid-fixed procedural boss (for GLITCH cycle) ────────────────
+
+/**
+ * Generate a procedural boss with a FIXED grid size.
+ * Difficulty still scales with level, but gridSize is deterministic
+ * based on the GLITCH cycle position.
+ */
+export function generateProceduralBossForGrid(level: number, fixedGridSize: 3 | 4 | 5): ProceduralBoss {
+  const boss = generateProceduralBoss(level);
+  boss.gridSize = fixedGridSize;
+  // Adjust matches needed: 4×4+ battles are Bo3, big bosses Bo5
+  boss.matchesNeeded = fixedGridSize >= 5 && level >= 20 ? 3 : 2;
+  return boss;
+}
+
 // ─── Utilities ────────────────────────────────────────────────────
 
 export function getAxiom(key: keyof GatoModifiers): AxiomCategory {

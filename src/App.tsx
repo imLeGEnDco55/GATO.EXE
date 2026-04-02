@@ -16,18 +16,16 @@ import { MainMenu } from './components/MainMenu';
 import { Board } from './components/Board';
 import { GameHUD } from './components/GameHUD';
 import { RulesModal } from './components/RulesModal';
-import { CardEditor } from './components/CardEditor';
-import { CardImport } from './components/CardImport';
 import { BlackMarketShop } from './components/BlackMarketShop';
 import { SDKat } from './components/SDKat';
-import { HackCardEditor } from './components/HackCardEditor';
 
-type AppScreen = 'menu' | 'gauntlet' | 'custom' | 'editor' | 'import' | 'shop' | 'sdkat' | 'hack-editor';
+type AppScreen = 'menu' | 'gauntlet' | 'shop' | 'sdkat';
 
 export default function App() {
   const [showRules, setShowRules] = useState(false);
   const [screen, setScreen] = useState<AppScreen>('menu');
   const [customHacks, setCustomHacks] = useState<CustomHackData[]>([]);
+  const [customGatos, setCustomGatos] = useState<GatoCard[]>([]);
   const [settings, setSettings] = useState<GameSettings>({
     mode: 'classic',
     opponent: 'cpu',
@@ -54,7 +52,7 @@ export default function App() {
     winStreak,
     buyHack,
     continueFromShop,
-  } = useGauntlet(setSettings);
+  } = useGauntlet(setSettings, customHacks, customGatos);
 
   useCPU({
     board: engine.board,
@@ -63,7 +61,7 @@ export default function App() {
     gameState: engine.gameState,
     pieces: engine.pieces,
     settings,
-    mistakeRate: screen === 'custom' ? 0.4 : getCPUMistakeRate(),
+    mistakeRate: getCPUMistakeRate(),
     processMove: engine.processMove,
   });
 
@@ -90,13 +88,13 @@ export default function App() {
     }
   }, [gauntlet.isShopPhase, screen]);
 
-  const startGauntletMode = () => {
+  const startGlitchMode = () => {
     setScreen('gauntlet');
     startGauntlet();
     setTimeout(() => engine.resetGame(), 100);
   };
 
-  // Play a custom GatoCard (from editor or import)
+  // Play a custom GatoCard (triggered from SDKat sub-screens)
   const playCustomCard = useCallback((card: GatoCard) => {
     const mods = card.modifiers;
     const gridSize = card.gridSize;
@@ -116,9 +114,17 @@ export default function App() {
       mineIndex: mine,
       numericValues: numeric,
     }));
-    setScreen('custom');
-    setTimeout(() => engine.resetGame(), 100);
-  }, [engine]);
+    // Don't switch screen — SDKat sub-screens handle their own flow
+  }, []);
+
+  // Import gato into collection (for GLITCH tier matching)
+  const importGato = useCallback((card: GatoCard) => {
+    setCustomGatos(prev => {
+      // Avoid duplicates by id
+      if (prev.some(g => g.id === card.id)) return prev;
+      return [...prev, card];
+    });
+  }, []);
 
   const goToMenu = () => {
     engine.goToMenu();
@@ -126,8 +132,7 @@ export default function App() {
   };
 
   // Determine what to render
-  const isPlaying = screen === 'gauntlet' || screen === 'custom';
-  const showGame = isPlaying && engine.gameState !== 'menu';
+  const showGame = screen === 'gauntlet' && engine.gameState !== 'menu';
   const showShop = screen === 'shop';
 
   return (
@@ -138,25 +143,8 @@ export default function App() {
         <AnimatePresence mode="wait">
           {screen === 'menu' && (
             <MainMenu
-              onStartMainMode={startGauntletMode}
-              onOpenEditor={() => setScreen('editor')}
-              onOpenImport={() => setScreen('import')}
+              onStartGlitch={startGlitchMode}
               onOpenSDKat={() => setScreen('sdkat')}
-              onOpenHackEditor={() => setScreen('hack-editor')}
-            />
-          )}
-
-          {screen === 'editor' && (
-            <CardEditor
-              onBack={() => setScreen('menu')}
-              onPlayCard={playCustomCard}
-            />
-          )}
-
-          {screen === 'import' && (
-            <CardImport
-              onBack={() => setScreen('menu')}
-              onPlayCard={playCustomCard}
             />
           )}
 
@@ -165,8 +153,8 @@ export default function App() {
               <GameHUD
                 currentPlayer={engine.currentPlayer}
                 gauntlet={gauntlet}
-                gatoName={screen === 'custom' ? '🐱 CUSTOM GATO' : getActiveGatoName()}
-                gatoDesc={screen === 'custom' ? 'Gato personalizado' : getActiveGatoDesc()}
+                gatoName={getActiveGatoName()}
+                gatoDesc={getActiveGatoDesc()}
                 lagMessage={engine.lagMessage}
                 onExit={goToMenu}
               />
@@ -190,6 +178,7 @@ export default function App() {
             <BlackMarketShop
               wallet={wallet}
               purchasedHacks={gauntlet.purchasedHacks}
+              customHacks={customHacks}
               onBuyHack={buyHack}
               onContinue={() => {
                 continueFromShop();
@@ -204,15 +193,9 @@ export default function App() {
               onBack={() => setScreen('menu')}
               onImport={(hack) => {
                 setCustomHacks(prev => [...prev, hack]);
-                setScreen('menu');
               }}
-            />
-          )}
-
-          {screen === 'hack-editor' && (
-            <HackCardEditor
-              onBack={() => setScreen('menu')}
               onPlayCard={playCustomCard}
+              onImportGato={importGato}
             />
           )}
         </AnimatePresence>
@@ -221,7 +204,7 @@ export default function App() {
 
         <footer className="mt-8 text-center">
           <p className="text-[10px] text-slate-800 font-mono uppercase tracking-[0.4em]">
-            SYSTEM_ACTIVE // SDKat_v1
+            SYSTEM_ACTIVE // GLITCH_v2
           </p>
         </footer>
       </div>
@@ -230,7 +213,8 @@ export default function App() {
         .custom-scrollbar::-webkit-scrollbar { width: 2px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-      `}</style>
+      `}
+      </style>
     </div>
   );
 }
