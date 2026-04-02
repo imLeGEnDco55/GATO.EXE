@@ -7,9 +7,10 @@ import { renderCard, exportCardAsFile } from '../sdk/cardRenderer';
 interface CardEditorProps {
   onBack: () => void;
   onPlayCard: (card: GatoCard) => void;
+  onSaveToCatalog?: (card: GatoCard) => void;
 }
 
-export function CardEditor({ onBack, onPlayCard }: CardEditorProps) {
+export function CardEditor({ onBack, onPlayCard, onSaveToCatalog }: CardEditorProps) {
   const [card, setCard] = useState<GatoCard>(createBlankCard());
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -185,6 +186,14 @@ export function CardEditor({ onBack, onPlayCard }: CardEditorProps) {
 
       {/* Actions */}
       <div className="space-y-3 pt-4">
+        {onSaveToCatalog && (
+          <button
+            onClick={() => onSaveToCatalog({ ...card, createdAt: Date.now() })}
+            className="w-full py-4 bg-green-600 text-white rounded-2xl font-black text-lg tracking-tighter transition-all active:scale-95 hover:bg-green-500"
+          >
+            GUARDAR AL CATÁLOGO 💾
+          </button>
+        )}
         <button
           onClick={handleExport}
           className="w-full py-4 bg-white text-black rounded-2xl font-black text-lg tracking-tighter transition-all active:scale-95 hover:bg-indigo-400 hover:text-white"

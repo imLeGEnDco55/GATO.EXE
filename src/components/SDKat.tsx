@@ -1,20 +1,26 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Package, Download, Terminal } from 'lucide-react';
+import { ArrowLeft, Package, Download, Terminal, BookOpen } from 'lucide-react';
 import type { GatoCard } from '../sdk/gatoCard';
 import type { CustomHackData } from '../lib/hackCard';
 import { CardEditor } from './CardEditor';
 import { CardImport } from './CardImport';
+import { GatoCatalog } from './GatoCatalog';
 
 // ─── Sub-screen definitions ───────────────────────────────────────
 
-type SDKatScreen = 'hub' | 'editor' | 'import' | 'hakz';
+type SDKatScreen = 'hub' | 'editor' | 'import' | 'hakz' | 'catalog';
 
 interface SDKatProps {
   onBack: () => void;
   onImport: (hack: CustomHackData) => void;
   onPlayCard: (card: GatoCard) => void;
   onImportGato: (card: GatoCard) => void;
+  // Catalog props
+  catalogGatos: GatoCard[];
+  onSaveToCatalog: (card: GatoCard) => void;
+  onRemoveFromCatalog: (id: string) => void;
+  onToggleMainMode: (id: string) => void;
 }
 
 // ─── HAKZ Editor (current SDKat inline content) ────────────────────
@@ -24,8 +30,13 @@ import { SDKat as HakzEditor } from './SDKatHakzEditor';
 
 // ─── Main SDKat Hub ──────────────────────────────────────────────
 
-export function SDKat({ onBack, onImport, onPlayCard, onImportGato }: SDKatProps) {
+export function SDKat({
+  onBack, onImport, onPlayCard, onImportGato,
+  catalogGatos, onSaveToCatalog, onRemoveFromCatalog, onToggleMainMode,
+}: SDKatProps) {
   const [sub, setSub] = useState<SDKatScreen>('hub');
+
+  const mainCount = catalogGatos.filter(g => g.inMainMode).length;
 
   return (
     <motion.div
@@ -67,6 +78,23 @@ export function SDKat({ onBack, onImport, onPlayCard, onImportGato }: SDKatProps
 
             {/* Sub-screen buttons */}
             <div className="space-y-3">
+              {/* Catálogo */}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setSub('catalog')}
+                className="w-full p-5 bg-slate-900 border border-slate-800 rounded-2xl flex items-center gap-4 hover:border-amber-500/50 transition-all group"
+              >
+                <BookOpen className="w-6 h-6 text-slate-600 group-hover:text-amber-400 transition-colors" />
+                <div className="text-left flex-1">
+                  <span className="text-sm font-black tracking-wider text-white block">CATÁLOGO</span>
+                  <span className="text-[10px] font-mono text-slate-600 block">
+                    {catalogGatos.length} gato{catalogGatos.length !== 1 ? 's' : ''}
+                    {mainCount > 0 && ` · ${mainCount} en MAIN`}
+                  </span>
+                </div>
+              </motion.button>
+
               {/* GATO Editor */}
               <motion.button
                 whileHover={{ scale: 1.02 }}
@@ -112,6 +140,19 @@ export function SDKat({ onBack, onImport, onPlayCard, onImportGato }: SDKatProps
           </motion.div>
         )}
 
+        {sub === 'catalog' && (
+          <GatoCatalog
+            gatos={catalogGatos}
+            onBack={() => setSub('hub')}
+            onPlayCard={(card) => {
+              onImportGato(card);
+              onPlayCard(card);
+            }}
+            onToggleMain={onToggleMainMode}
+            onRemove={onRemoveFromCatalog}
+          />
+        )}
+
         {sub === 'editor' && (
           <CardEditor
             onBack={() => setSub('hub')}
@@ -119,6 +160,7 @@ export function SDKat({ onBack, onImport, onPlayCard, onImportGato }: SDKatProps
               onImportGato(card);
               onPlayCard(card);
             }}
+            onSaveToCatalog={onSaveToCatalog}
           />
         )}
 

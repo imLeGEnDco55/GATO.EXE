@@ -23,6 +23,8 @@ export interface GatoCard {
   modifiers: GatoModifiers;
   /** Unix timestamp of creation */
   createdAt: number;
+  /** Whether this card appears as opponent in MAIN/GLITCH mode */
+  inMainMode?: boolean;
 }
 
 /** PNG tEXt chunk keyword where card data lives */

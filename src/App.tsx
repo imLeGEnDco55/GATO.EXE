@@ -10,6 +10,7 @@ import { useGameEngine } from './hooks/useGameEngine';
 import { useGauntlet } from './hooks/useGauntlet';
 import { useCPU } from './hooks/useCPU';
 import { useGameJuice } from './hooks/useGameJuice';
+import { useCatalog } from './hooks/useCatalog';
 
 import { Header } from './components/Header';
 import { MainMenu } from './components/MainMenu';
@@ -25,7 +26,7 @@ export default function App() {
   const [showRules, setShowRules] = useState(false);
   const [screen, setScreen] = useState<AppScreen>('menu');
   const [customHacks, setCustomHacks] = useState<CustomHackData[]>([]);
-  const [customGatos, setCustomGatos] = useState<GatoCard[]>([]);
+  const catalog = useCatalog();
   const [settings, setSettings] = useState<GameSettings>({
     mode: 'classic',
     opponent: 'cpu',
@@ -52,7 +53,7 @@ export default function App() {
     winStreak,
     buyHack,
     continueFromShop,
-  } = useGauntlet(setSettings, customHacks, customGatos);
+  } = useGauntlet(setSettings, customHacks, catalog.mainModeGatos);
 
   useCPU({
     board: engine.board,
@@ -117,14 +118,10 @@ export default function App() {
     // Don't switch screen — SDKat sub-screens handle their own flow
   }, []);
 
-  // Import gato into collection (for GLITCH tier matching)
+  // Import gato into catalog (for GLITCH tier matching)
   const importGato = useCallback((card: GatoCard) => {
-    setCustomGatos(prev => {
-      // Avoid duplicates by id
-      if (prev.some(g => g.id === card.id)) return prev;
-      return [...prev, card];
-    });
-  }, []);
+    catalog.saveGato(card);
+  }, [catalog]);
 
   const goToMenu = () => {
     engine.goToMenu();
@@ -196,6 +193,10 @@ export default function App() {
               }}
               onPlayCard={playCustomCard}
               onImportGato={importGato}
+              catalogGatos={catalog.catalogGatos}
+              onSaveToCatalog={catalog.saveGato}
+              onRemoveFromCatalog={catalog.removeGato}
+              onToggleMainMode={catalog.toggleMainMode}
             />
           )}
         </AnimatePresence>
